@@ -1,5 +1,6 @@
 import pygame
 import numpy as np
+import random
 
 SCREEN_WIDTH = 800
 SCREEN_HEIGHT = 600
@@ -32,17 +33,13 @@ class Player(Actor):
         Actor.__init__(self, image, coords)
     
     def move(self, key):
-        if key == pygame.K_UP:
-            self.change_coords[1] -= self.SPEED
-        if key == pygame.K_DOWN:
-            self.change_coords[1] += self.SPEED
         if key == pygame.K_LEFT:
             self.change_coords[0] -= self.SPEED
         if key == pygame.K_RIGHT:
             self.change_coords[0] += self.SPEED
     
     def stop(self, key):
-        if key == pygame.K_DOWN or key == pygame.K_UP or key == pygame.K_LEFT or key == pygame.K_RIGHT:
+        if key == pygame.K_LEFT or key == pygame.K_RIGHT:
             self.change_coords = [0, 0]
     
     def update(self):
@@ -54,12 +51,6 @@ class Player(Actor):
         
         if self.coords[0] >= 736:
             self.coords[0] = 736
-        
-        if self.coords[1] <= 0:
-            self.coords[1] = 0
-        
-        if self.coords[1] >= 540:
-            self.coords[1] = 540
 
 playerImg = pygame.image.load('images/among-us-64.png')
 player_coords = [370, 480]
@@ -67,20 +58,47 @@ player = Player("Player 1", playerImg, player_coords)
 
 # Enemy
 class Impostor(Actor):
+    ROW_JUMP = 50
+    SIDE_JUMP = 5
+    direction = 1
     possible_images = ['images/among-us-imposter-64-1.png', 'images/among-us-imposter-64-2.png', 'images/among-us-imposter-64-3.png']
+    STEP_TIME = 60
+    FRAME_COUNT = 0
+    TURN = 0
 
-    def __init__(self, image, coords):
+    def __init__(self, coords):
+        value = random.randint(0, 2)
+        image = pygame.image.load(self.possible_images[value])
         Actor.__init__(self, image, coords)
 
-    def move():
-        return 0
+    def move(self):
 
-def initialise_imposters(NUM_IMPOSTORS, NUM_ROW):
+            if self.TURN == 1:
+                self.coords[0] += self.direction * self.SIDE_JUMP  
+                self.TURN = 0
+
+            elif self.coords[0] >= 736 or self.coords[0] <= 0:
+                self.coords[1] += self.ROW_JUMP
+                self.direction *= -1
+                self.TURN = 1
+
+            else:
+                self.coords[0] += self.direction * self.SIDE_JUMP    
+            
+
+def initialise_imposters(NUM_IMPOSTORS, NUM_PER_ROW):
     arr = []
+    ROW_SPACE = 70
+    START_X = 50
+    START_Y = 30
 
-    for i in range(NUM_IMPOSTORS):
-        space_between = SCREEN_WIDTH / NUM_ROW
-        
+    for i in range(NUM_IMPOSTORS // NUM_PER_ROW):
+        space_between = SCREEN_WIDTH / NUM_PER_ROW
+        for j in range(NUM_PER_ROW):
+
+            # Get coords
+            coords = [START_X + (j * space_between), START_Y + (i * ROW_SPACE)]
+            arr.append(Impostor(coords))
 
     return arr
 
@@ -106,5 +124,14 @@ while running:
     player.update()
     player.draw()
 
+    if Impostor.FRAME_COUNT == Impostor.STEP_TIME:
+        for impostor in impostor_array:
+            impostor.move()
+        Impostor.FRAME_COUNT = 0
+    else:
+        Impostor.FRAME_COUNT += 1
+
+    for impostor in impostor_array:
+        impostor.draw()
 
     pygame.display.update()
