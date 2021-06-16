@@ -1,11 +1,37 @@
 import pygame
 import numpy as np
 import random
+import math
+
+from Player import Player
+from Impostor import Impostor
+
+from pygame import mixer
 
 SCREEN_WIDTH = 800
 SCREEN_HEIGHT = 600
+
+background = pygame.image.load(r"images/background_spaceship_resized.png")
+
 # Initiliase the pygame
 pygame.init()
+
+# Font Used
+font = pygame.font.Font("freesansbold.ttf", 26)
+
+""" # Death Screen Movie
+death_movie = pygame.movie.Movie("insert-name.mpg")
+sur_obj=pygame.display.set_mode(death_movie.get_size())
+mov_scre=pygame.Surface(death_movie.get_size()).convert() """
+
+# Load the background music
+mixer.music.load(r"sounds/background.wav")
+mixer.music.set_volume(0.2)
+mixer.music.play(-1)
+
+# Load the destroy sound
+destroy_sound = mixer.Sound(r"sounds/destroy_impostor.wav")
+death_sound = mixer.Sound(r"sounds/player_death.wav")
 
 # Screen
 screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
@@ -15,76 +41,13 @@ pygame.display.set_caption("Amogus Space Invaders")
 icon = pygame.image.load(r'images/spaceship.png')
 pygame.display.set_icon(icon)
 
-class Actor:
-    def __init__(self, image, coords):
-        self.image = image
-        self.coords = coords
-    
-    def draw(self):
-        screen.blit(self.image, (self.coords[0], self.coords[1]))
-
-# Player Class
-class Player(Actor):
-    name = ""
-    change_coords = [0, 0]
-    SPEED = 1
-    def __init__(self, name, image, coords):
-        self.name = name
-        Actor.__init__(self, image, coords)
-    
-    def move(self, key):
-        if key == pygame.K_LEFT:
-            self.change_coords[0] -= self.SPEED
-        if key == pygame.K_RIGHT:
-            self.change_coords[0] += self.SPEED
-    
-    def stop(self, key):
-        if key == pygame.K_LEFT or key == pygame.K_RIGHT:
-            self.change_coords = [0, 0]
-    
-    def update(self):
-        self.coords = np.add(self.coords, self.change_coords)
-
-    def check_boundary(self):
-        if self.coords[0] <= 0:
-            self.coords[0] = 0
-        
-        if self.coords[0] >= 736:
-            self.coords[0] = 736
-
 playerImg = pygame.image.load('images/among-us-64.png')
 player_coords = [370, 480]
-player = Player("Player 1", playerImg, player_coords)
+player = Player("Player 1", playerImg, player_coords, destroy_sound)
 
-# Enemy
-class Impostor(Actor):
-    ROW_JUMP = 50
-    SIDE_JUMP = 5
-    direction = 1
-    possible_images = ['images/among-us-imposter-64-1.png', 'images/among-us-imposter-64-2.png', 'images/among-us-imposter-64-3.png']
-    STEP_TIME = 60
-    FRAME_COUNT = 0
-    TURN = 0
-
-    def __init__(self, coords):
-        value = random.randint(0, 2)
-        image = pygame.image.load(self.possible_images[value])
-        Actor.__init__(self, image, coords)
-
-    def move(self):
-
-            if self.TURN == 1:
-                self.coords[0] += self.direction * self.SIDE_JUMP  
-                self.TURN = 0
-
-            elif self.coords[0] >= 736 or self.coords[0] <= 0:
-                self.coords[1] += self.ROW_JUMP
-                self.direction *= -1
-                self.TURN = 1
-
-            else:
-                self.coords[0] += self.direction * self.SIDE_JUMP    
-            
+def display_score(player):
+    string_score = font.render("Score: " + str(player.score), True, [255, 255, 255])
+    screen.blit(string_score, (10, 10))
 
 def initialise_imposters(NUM_IMPOSTORS, NUM_PER_ROW):
     arr = []
@@ -104,25 +67,37 @@ def initialise_imposters(NUM_IMPOSTORS, NUM_PER_ROW):
 
 impostor_array = initialise_imposters(20, 5) # 20 Impostors, 5 on each row
 
-running = True
-while running:
+# Want to create infinite generation of enemies to try to maximise score before getting killed by imposters
+# So an infinite level space invaders among us
+while True:
 
     # RGB
     screen.fill((0, 0, 0))
+    screen.blit(background, (0, 0))
 
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
-            running = False
+            pygame.quit()
+            quit()
         
         if event.type == pygame.KEYDOWN:
-            player.move(event.key)
+            if event.key == pygame.K_SPACE:
+                player.fire_bullet()
+            else:
+                player.move(event.key)
         
         if event.type == pygame.KEYUP:
             player.stop(event.key)
     
     player.check_boundary()
     player.update()
-    player.draw()
+    player.draw(screen)
+    
+    for bullet in player.bullets:
+        bullet.fire()
+        bullet.draw(screen)
+
+    player.check_hit_enemy(impostor_array)
 
     if Impostor.FRAME_COUNT == Impostor.STEP_TIME:
         for impostor in impostor_array:
@@ -132,6 +107,15 @@ while running:
         Impostor.FRAME_COUNT += 1
 
     for impostor in impostor_array:
-        impostor.draw()
+        impostor.draw(screen)
+
+    display_score(player)
+
+    if player.check_death(impostor_array):
+        death_sound.play()
+        pygame.time.delay(5000)
+        pygame.quit()
+        quit()
 
     pygame.display.update()
+
