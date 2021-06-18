@@ -1,9 +1,12 @@
 from Actor import Actor
+from Bullet import Bullet
 import pygame
 import random
 
 # Enemy Class
 class Impostor(Actor):
+    
+    bullets = []
 
     # Movement Properties
     ROW_JUMP = 50
@@ -13,6 +16,7 @@ class Impostor(Actor):
     STEP_TIME = 30
 
     # Impostor Spawn Properties
+    SPAWN = True
     SPAWN_LOWER = 200
     SPAWN_HIGHER = 600
     SPAWN_TIME = random.randint(SPAWN_LOWER, SPAWN_HIGHER)
@@ -24,6 +28,10 @@ class Impostor(Actor):
     ROW_SPACE = 70
     START_X = 50
     START_Y = 30
+
+    # Bullet Properties
+    SHOOT_TIMER = 500 # Shoots bullets every 600 frames
+    SHOOT_FRAME = 0
 
     def __init__(self, coords):
         value = random.randint(0, 2)
@@ -45,4 +53,8 @@ class Impostor(Actor):
 
             else:
                 self.coords[0] += self.direction * self.SIDE_JUMP    
+    
+    def fire_bullet(self):
+        bullet = Bullet([self.coords[0], self.coords[1]], "ENEMY")
+        Impostor.bullets.append(bullet)
             

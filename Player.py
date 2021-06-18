@@ -6,6 +6,7 @@ import math
 
 # Player Class
 class Player(Actor):
+    alive = True
     bullets = []
     name = ""
     change_coords = [0, 0]
@@ -38,7 +39,7 @@ class Player(Actor):
             self.coords[0] = 736
     
     def fire_bullet(self):
-        bullet = Bullet(self.coords)
+        bullet = Bullet(self.coords, "PLAYER")
         self.bullets.append(bullet)
     
     def check_hit_enemy(self, impostors):
@@ -54,7 +55,14 @@ class Player(Actor):
 
             bullets_len -= 1
     
-    def check_death(self, impostors):
+    def check_death(self, impostors, impostor_bullets):
+        
+        # If Impostor's bullet touches player
+        for bullet in impostor_bullets:
+            if math.dist(self.coords, bullet.coords) < 20:
+                return True
+
+        # If Impostor touches player
         for impostor in impostors:
             if math.dist(self.coords, impostor.coords) < 20:
                 return True
