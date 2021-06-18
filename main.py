@@ -51,21 +51,41 @@ def display_score(player):
 
 def initialise_imposters(NUM_IMPOSTORS, NUM_PER_ROW):
     arr = []
-    ROW_SPACE = 70
-    START_X = 50
-    START_Y = 30
 
     for i in range(NUM_IMPOSTORS // NUM_PER_ROW):
         space_between = SCREEN_WIDTH / NUM_PER_ROW
         for j in range(NUM_PER_ROW):
 
             # Get coords
-            coords = [START_X + (j * space_between), START_Y + (i * ROW_SPACE)]
+            coords = [Impostor.START_X + (j * space_between), Impostor.START_Y + (i * Impostor.ROW_SPACE)]
             arr.append(Impostor(coords))
 
     return arr
 
-impostor_array = initialise_imposters(20, 5) # 20 Impostors, 5 on each row
+def spawn_random_impostor(NUM_IMPOSTORS, NUM_PER_ROW, impostor_arr):
+    space_between = SCREEN_WIDTH / NUM_PER_ROW
+
+    i = random.randint(0, NUM_IMPOSTORS // NUM_PER_ROW - 1)
+    j = random.randint(0, NUM_PER_ROW - 1)
+
+    coords = [Impostor.START_X + (j * space_between), Impostor.START_Y + (i * Impostor.ROW_SPACE)]
+
+    impostor_arr.append(Impostor(coords))
+
+    return impostor_arr
+
+NUM_IMPOSTORS = 20
+NUM_ROWS = 5
+impostor_array = initialise_imposters(NUM_IMPOSTORS, NUM_ROWS) # 20 Impostors, 5 on each row
+
+# Each time we hit 10000, we increase the speed and rate at which the impostors move and spawn
+DIFFICULTY_LEVEL = 1
+DIFFICULTY_CONTROL_TIME = 10000
+FRAME_COUNT = 0
+
+def display_difficulty():
+    string_difficulty = font.render("Difficulty Level: " + str(DIFFICULTY_LEVEL), True, [255, 255, 255])
+    screen.blit(string_difficulty, (150, 10))
 
 # Want to create infinite generation of enemies to try to maximise score before getting killed by imposters
 # So an infinite level space invaders among us
@@ -93,12 +113,35 @@ while True:
     player.update()
     player.draw(screen)
     
+    # Fire Bullets Across Screen
     for bullet in player.bullets:
         bullet.fire()
         bullet.draw(screen)
 
+    # Check for collision between bullets between impostors
     player.check_hit_enemy(impostor_array)
 
+    # Difficulty Update Across Time
+    if FRAME_COUNT == DIFFICULTY_CONTROL_TIME:
+        DIFFICULTY_LEVEL += 1
+        Impostor.SPAWN_LOWER = round(Impostor.SPAWN_LOWER * 0.9)
+        Impostor.SPAWN_HIGHER = round(Impostor.SPAWN_HIGHER * 0.9)
+        Impostor.STEP_TIME = round(Impostor.STEP_TIME * 0.9)
+        Impostor.ROW_JUMP = round(Impostor.ROW_JUMP * 1.1)
+        Impostor.FRAME_COUNT = 0
+        FRAME_COUNT = 0
+    else:
+        FRAME_COUNT += 1
+
+    # Spawn Update
+    if Impostor.SPAWN_COUNT == Impostor.SPAWN_TIME:
+        impostor_array = spawn_random_impostor(NUM_IMPOSTORS, NUM_ROWS, impostor_array)
+        Impostor.SPAWN_COUNT = 0
+        Impostor.SPAWN_TIME = random.randint(Impostor.SPAWN_LOWER, Impostor.SPAWN_HIGHER)
+    else:
+        Impostor.SPAWN_COUNT += 1
+
+    # Impostor Movement
     if Impostor.FRAME_COUNT == Impostor.STEP_TIME:
         for impostor in impostor_array:
             impostor.move()
@@ -106,10 +149,13 @@ while True:
     else:
         Impostor.FRAME_COUNT += 1
 
+    # Draw Impostor
     for impostor in impostor_array:
         impostor.draw(screen)
 
+    # Display Scores and Difficulty
     display_score(player)
+    display_difficulty()
 
     if player.check_death(impostor_array):
         death_sound.play()

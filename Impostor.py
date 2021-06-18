@@ -4,13 +4,26 @@ import random
 
 # Enemy Class
 class Impostor(Actor):
+
+    # Movement Properties
     ROW_JUMP = 50
     SIDE_JUMP = 5
     direction = 1
     possible_images = ['images/among-us-imposter-64-1.png', 'images/among-us-imposter-64-2.png', 'images/among-us-imposter-64-3.png']
-    STEP_TIME = 10
+    STEP_TIME = 30
+
+    # Impostor Spawn Properties
+    SPAWN_LOWER = 200
+    SPAWN_HIGHER = 600
+    SPAWN_TIME = random.randint(SPAWN_LOWER, SPAWN_HIGHER)
+    SPAWN_COUNT = 0
+    
+    # More Properties
     FRAME_COUNT = 0
     TURN = 0
+    ROW_SPACE = 70
+    START_X = 50
+    START_Y = 30
 
     def __init__(self, coords):
         value = random.randint(0, 2)
