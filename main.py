@@ -1,7 +1,6 @@
 import pygame
 import numpy as np
 import random
-import math
 
 from Player import Player
 from Impostor import Impostor
@@ -15,6 +14,9 @@ background = pygame.image.load(r"images/background_spaceship_resized.png")
 
 # Initiliase the pygame
 pygame.init()
+
+# Use clock
+clock = pygame.time.Clock()
 
 # Font Used
 font = pygame.font.Font("freesansbold.ttf", 26)
@@ -199,5 +201,6 @@ while True:
         pygame.time.delay(3000)
         player.alive = False
 
+    clock.tick(500)
     pygame.display.update()
 
